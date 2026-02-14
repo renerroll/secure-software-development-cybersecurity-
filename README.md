@@ -1,6 +1,6 @@
 # Secure Architecture Lab — Juice Shop analysis & рішення
 
-## 🍊 Коротко
+## Architecture Lab — Juice Shop
 Цей документ містить архітектурне ревʼю  локального контейнера **OWASP Juice Shop** (завдання виконано згідно `task.md`): знахідки, порушені принципи, рекомендації та короткі приклади виправлень.
 
 ---
@@ -78,6 +78,46 @@ app.use(cookieParser(process.env.COOKIE_SECRET))
 
 - Гайд для CI (обов'язкові job-и): `sbom` → `trivy` → `semgrep` → `gitleaks`.
 
+---
+
+## 🔒 Vulnerabilities (to verify with SBOM/SCA)
+Нижче — CVE, які були виявлені / надані. **Status** показує, чи вразливість підтверджена за `package.json` / runtime або потребує додаткової перевірки через SBOM/SCA (Trivy/Grype).
+
+| CVE | Severity | Пакет | Версія | Status | Recommendation |
+|---|---:|---|---:|---|---|
+| CVE-2023-37903 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | If present → upgrade/remove vm2; avoid running untrusted code in vm2 |
+| CVE-2023-32314 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | Patch or remove dependency |
+| CVE-2026-22709 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | Patch or remove dependency |
+| CVE-2023-37466 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | Patch or remove dependency |
+| CVE-2021-44906 | 9.8 | minimist | 0.2.4 | Needs SBOM (transitive) | Update minimist or remove transitive dep |
+| CVE-2025-55130 | 9.1 | node (runtime) | 22.21.1 | Confirmed (container runtime) | Upgrade Node to patched release or apply mitigation in image |
+| CVE-2019-10744 | 9.1 | lodash | 2.4.2 | Needs SBOM (transitive) | Update lodash to safe version |
+| CVE-2023-46233 | 9.1 | crypto-js | 3.3.0 | Needs SBOM (transitive) | Replace / update crypto-js |
+| CVE-2015-9235 | N/A | jsonwebtoken | 0.1.0+ | Confirmed (package.json contains jsonwebtoken@0.4.0) | Upgrade `jsonwebtoken` to a patched version or migrate to `jose` |
+| GHSA-5mrr-rgp6-x4gr | N/A | marsdb | 0.6.11 | Confirmed (top-level dep) | Check advisory; update or mitigate |
+
+> Примітка: багато пакетів можуть бути транзитивними — потрібен SBOM (syft / npm run sbom) та SCA (trivy/grype) щоб підтвердити наявність і точні версії.
+
+### How to verify locally
+```bash
+# generate SBOM for image (syft must be installed)
+syft bkimminich/juice-shop:latest -o cyclonedx-json > sbom-image.json
+
+# scan image
+trivy image --format json --output trivy-image.json bkimminich/juice-shop:latest
+# or
+grype bkimminich/juice-shop:latest -o json > grype-image.json
+
+# scan source
+npm run sbom
+npm audit
+```
+
+### Next steps
+1. Запустити SBOM + SCA та оновити статус CVE (Confirmed / Not found / Remediated).
+2. Для Confirmed — підготувати PR з оновленнями пакетів або mitigation (`fix/`).
+3. Для runtime CVE — оновити образ Node або застосувати runtime mitigation.
+
 ## Інструменти
 
 | Інструмент | Призначення | Примітки |
@@ -88,11 +128,5 @@ app.use(cookieParser(process.env.COOKIE_SECRET))
 | Notepad / Word / Google Docs | Оформлення звіту | Підготовка deliverables для LMS / репо |
 
 ---
-
-## Відповідність `task.md` (що зроблено)
-- Провів аудит запущеного контейнера (файли: `package.json`, `build/server.js`) — ✅
-- Виконав звіт (цей README — секція з аналізом та рекомендаціями) — ✅
-- Надано пріоритети та приклади виправлень — ✅
-
 ---
 
