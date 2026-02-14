@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "name": "sca-uuid",
+  "dependencies": {
+    "uuid": {
+      "version": "3.4.0",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-3.4.0.tgz",
+      "overridden": false
+    }
+  }
+}
