@@ -85,9 +85,26 @@
 ---
 
 ## Докази / артефакти для перевірки
-- Логи тестів: `lab/pytest_good.txt`, `lab/pytest_bad.txt`  
+- Логи тестів: `lab/pytest_good.txt`, `lab/pytest_bad.txt`
+- Локальний доказ провалу (pytest):
+
+```
+FAILED test_app.py::test_hello_world - AssertionError: assert b'Hello, Evil World!' in b'<p>Hello, World!</p>'
+FAILED test_app.py::test_dangerous_endpoint - AssertionError: expected call not found.
+FAILED test_app.py::test_force_fail - AssertionError: intentional fail for CI demonstration
+3 failed, 1 passed in 0.13s
+```
+
+## Докази — GitLab pipelines
+
+![Pipeline — успішний](lab/screenshots/pipeline_success.png)
+*Успішний запуск (commit `01d65228`).*
+
+![Pipeline — провальний](lab/screenshots/pipeline_failed.png)
+*Провальний запуск (commit `0034985`) — помилка на етапі unit tests.*
+
 - Уривок CI: `lab/gitlab-ci_snippet.txt`  
-- Коміти: `2521f4a` (GOOD), `cb45a93` (BAD), `d51c1ec` (документи)  
+- Релевантні коміти (включно з демо‑провалом): `4c79480`, `0034985`, `01d6522`  
 - Архів для здачі: `lab8_submission.zip` (у корені гілки)
 
 ---
