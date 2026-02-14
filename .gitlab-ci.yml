@@ -1,59 +1,120 @@
-<<<<<<< .gitlab-ci.yml
-# This file is a template, and might need editing before it works on your project.
-# This is a sample GitLab CI/CD configuration file that should run without any modifications.
-# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
-# it uses echo commands to simulate the pipeline execution.
-#
-# A pipeline is composed of independent jobs that run scripts, grouped into stages.
-# Stages run in sequential order, but jobs within stages run in parallel.
-#
-# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
-#
-# You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-#
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/development/cicd/templates/
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
-
-stages:          # List of stages for jobs, and their order of execution
-  - build
-  - test
-  - deploy
-
-build-job:       # This job runs in the build stage, which runs first.
-  stage: build
-  script:
-    - echo "Compiling the code..."
-    - echo "Compile complete."
-
-unit-test-job:   # This job runs in the test stage.
-  stage: test    # It only starts when the job in the build stage completes successfully.
-  script:
-    - echo "Running unit tests... This will take about 60 seconds."
-    - sleep 60
-    - echo "Code coverage is 90%"
-
-lint-test-job:   # This job also runs in the test stage.
-  stage: test    # It can run at the same time as unit-test-job (in parallel).
-  script:
-    - echo "Linting code... This will take about 10 seconds."
-    - sleep 10
-    - echo "No lint issues found."
-
-deploy-job:      # This job runs in the deploy stage.
-  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
-  environment: production
-  script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
-
+# .gitlab-ci.yml
+# CI/CD pipeline for the lab project — includes security scanning templates
 
 stages:
-- test
-sast:
-  stage: test
+  - secret-scan
+  - sast
+  - test
+  - build
+  - sca
+  - deploy
+  - dast
+
+# Include GitLab security templates
 include:
-- template: Security/SAST.gitlab-ci.yml
->>>>>>> .gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/DAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+
+# Ensure template jobs fail the pipeline on findings (do not allow failure)
+secret_detection:
+  allow_failure: false
+sast:
+  allow_failure: false
+unit_test_job:
+  allow_failure: false
+dependency_scanning:
+  allow_failure: false
+container_scanning:
+  allow_failure: false
+
+# =========================================================================
+# Secret detection (repo secret scanning)
+# =========================================================================
+secret_detection:
+  stage: secret-scan
+  needs: []
+
+# =========================================================================
+# SAST (Static Application Security Testing)
+# =========================================================================
+sast:
+  stage: sast
+  needs: []
+
+# =========================================================================
+# Unit tests
+# =========================================================================
+unit_test_job:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - echo "Running unit tests..."
+    - pip install -r requirements.txt
+    - pip install pytest
+    - pytest test_app.py
+  needs:
+    - job: sast
+      optional: true
+
+# =========================================================================
+# Build (Docker image)
+# =========================================================================
+docker_build_job:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - echo "Building Docker image..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY_IMAGE" .
+    - docker push "$CI_REGISTRY_IMAGE"
+  needs: ["unit_test_job"]
+
+# =========================================================================
+# SCA / SBOM / container scanning
+# =========================================================================
+dependency_scanning:
+  stage: sca
+  needs: ["docker_build_job"]
+
+container_scanning:
+  stage: sca
+  variables:
+    CS_IMAGE: $CI_REGISTRY_IMAGE
+  needs:
+    - docker_build_job
+  services:
+    - docker:20.10.16-dind
+
+# =========================================================================
+# Deploy (used by DAST)
+# =========================================================================
+deploy_job:
+  stage: deploy
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - echo "Deploying the application..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker pull "$CI_REGISTRY_IMAGE"
+    - docker run -d --name my-python-app -p 5000:5000 "$CI_REGISTRY_IMAGE"
+    - echo "Application deployed locally at http://my-python-app:5000"
+    - sleep 10
+  needs: ["container_scanning"]
+
+# =========================================================================
+# DAST (Dynamic Application Security Testing)
+# =========================================================================
+dast:
+  stage: dast
+  variables:
+    DAST_WEBSITE: http://my-python-app:5000
+  needs: ["deploy_job"]
+  services:
+    - docker:20.10.16-dind
+
