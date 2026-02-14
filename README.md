@@ -83,7 +83,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET))
 ## 🔒 Vulnerabilities (to verify with SBOM/SCA)
 Нижче — CVE, які були виявлені / надані. **Status** показує, чи вразливість підтверджена за `package.json` / runtime або потребує додаткової перевірки через SBOM/SCA (Trivy/Grype).
 
-| CVE | Severity | Пакет | Версія | Status | Recommendation |
+| CVE | Серйозність | Пакет | Версія | Статус | Рекомендації |
 |---|---:|---|---:|---|---|
 | CVE-2023-37903 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | If present → upgrade/remove vm2; avoid running untrusted code in vm2 |
 | CVE-2023-32314 | 9.8 | vm2 | 3.9.17 | Needs SBOM (likely transitive) | Patch or remove dependency |
@@ -112,11 +112,6 @@ grype bkimminich/juice-shop:latest -o json > grype-image.json
 npm run sbom
 npm audit
 ```
-
-### Next steps
-1. Запустити SBOM + SCA та оновити статус CVE (Confirmed / Not found / Remediated).
-2. Для Confirmed — підготувати PR з оновленнями пакетів або mitigation (`fix/`).
-3. Для runtime CVE — оновити образ Node або застосувати runtime mitigation.
 
 ## Інструменти
 
