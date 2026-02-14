@@ -1,0 +1,12 @@
+jwt:
+  algorithm: HS256
+  shared_secret: "hardcoded-secret"
+  verify_signature: true
+
+passwords:
+  hash_function: bcrypt
+  salt: fixed_salt
+
+encryption:
+  algorithm: DES
+  key_storage: hardcoded

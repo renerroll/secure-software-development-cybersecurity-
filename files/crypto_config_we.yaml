@@ -1,0 +1,15 @@
+jwt:
+  algorithm: none
+  key_size: 1024
+  verify_signature: false
+  claims:
+    exp_required: false
+    aud_check: false
+
+passwords:
+  hash_function: sha1
+
+encryption:
+  algorithm: AES-CBC
+  key_length: 128
+  iv_strategy: fixed_iv

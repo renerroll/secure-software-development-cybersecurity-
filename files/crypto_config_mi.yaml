@@ -1,0 +1,15 @@
+jwt:
+  algorithm: RS256
+  key_size: 2048
+  verify_signature: true
+
+passwords:
+  hash_function: argon2
+  time_cost: 1
+  memory_cost: 1024
+  parallelism: 1
+
+encryption:
+  algorithm: AES-GCM
+  key_length: 256
+  iv_strategy: fixed_iv
