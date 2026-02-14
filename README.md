@@ -8,9 +8,9 @@
 - Релевантні коміти:
   - `2521f4a` — tests: GOOD — expected pass
   - `cb45a93` — tests: BAD — expected fail
-  - `d51c1ec` — docs: add Task8 report draft + artifacts zip
+  - `d51c1ec` — docs: add Task8 report draft + artifacts zip. 
 
----
+--- 
 
 ## Короткий огляд — що зроблено ✅
 - Показано два запуски pipeline: **успішний** (GOOD tests) та **провальний** (BAD tests) — демонстрація принципу *fail fast*. 
