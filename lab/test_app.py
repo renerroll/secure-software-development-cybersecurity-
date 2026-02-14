@@ -26,3 +26,6 @@ def test_dangerous_endpoint():
             mock_system.assert_called_with('echo hello')
             assert response.status_code == 200
             assert b"Command executed." in response.data
+
+def test_force_fail():
+    assert False, 'intentional fail for CI demonstration'
