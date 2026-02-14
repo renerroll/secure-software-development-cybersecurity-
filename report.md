@@ -87,11 +87,6 @@ npm run sbom    # generates bom.json / bom.xml
 npm audit fix --package-lock-only
 ```
 
-### Next steps
-1. Запустити SBOM + Trivy/Grype та оновити статус кожного CVE у цьому звіті (Confirmed / Not found / Remediated).  
-2. Для Confirmed → підготувати PR з оновленнями пакетів або mitigation (fix/).  
-3. Для Node runtime CVE → оновити образ з безпечною версією Node.
-
 ---
 
 
