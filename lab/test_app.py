@@ -1,28 +1,42 @@
 # test_app.py
-# Юніт-тести для додатка Flask
+import pytest
 from app import app
-from unittest.mock import patch
+from werkzeug.exceptions import BadRequest
 
-def test_hello_world():
-    """Перевіряє, що функція hello_world повертає очікуваний рядок."""
+@pytest.fixture
+def client():
+    """Створює тестового клієнта для додатку Flask."""
+    app.config['TESTING'] = True
     with app.test_client() as client:
-        response = client.get('/')
-        assert response.status_code == 200
-        # НАВМИСНА ПОМИЛКА: Змінено очікуваний рядок.
-        assert b"Hello, Evil World!" in response.data
+        yield client
 
-def test_execute_code_safe():
-    """Перевіряє, що функція execute_code працює без параметрів."""
-    with app.test_client() as client:
-        response = client.get('/execute')
-        assert response.status_code == 200
-        assert b"No code to execute." in response.data
+def test_hello_world_route(client):
+    """
+    Перевіряє, чи правильно працює маршрут '/'.
+    """
+    response = client.get('/')
+    # Замість assert, використовуємо if-else для відповідності вимогам Bandit B101
+    if response.status_code != 200:
+        raise AssertionError(f"Очікуваний код статусу 200, отримано {response.status_code}")
+    if b"Hello, World!" not in response.data:
+        raise AssertionError("Очікуваний текст 'Hello, World!' не знайдено.")
 
-def test_dangerous_endpoint():
-    """Перевіряє, що небезпечна функція викликає os.system."""
-    with app.test_client() as client:
-        with patch('os.system') as mock_system:
-            response = client.get('/dangerous?cmd=echo hello')
-            mock_system.assert_called_with('echo hello')
-            assert response.status_code == 200
-            assert b"Command executed." in response.data
+def test_execute_route_literal(client):
+    """
+    Перевіряє, чи правильно маршрут '/execute' обробляє безпечні літерали.
+    """
+    response = client.get('/execute?code=123')
+    if response.status_code != 200:
+        raise AssertionError(f"Очікуваний код статусу 200, отримано {response.status_code}")
+    if b"Result of execution: 123" not in response.data:
+        raise AssertionError("Очікуваний результат 'Result of execution: 123' не знайдено.")
+
+def test_execute_route_invalid_input(client):
+    """
+    Перевіряє, чи правильно маршрут '/execute' обробляє небезпечні вирази.
+    """
+    response = client.get('/execute?code=1+1')
+    if response.status_code != 200:
+        raise AssertionError(f"Очікуваний код статусу 200, отримано {response.status_code}")
+    if b"Error: Invalid input. Only literal values allowed." not in response.data:
+        raise AssertionError("Очікуване повідомлення про помилку не знайдено.")
